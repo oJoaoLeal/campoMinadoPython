@@ -1,2 +1,2 @@
 # campoMinadoPython
-Jogo campo minado em python, criado para na disciplina de algoritmos.
+Jogo campo minado em python, criado na disciplina de algoritmos.
