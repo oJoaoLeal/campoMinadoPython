@@ -1,8 +1,8 @@
 import random
 
 
-def gerar_matriz(linhas, colunas, valor):
-    return [[valor] * colunas for _ in range(linhas)]
+def gerar_matriz(tamanho, valor):
+    return [[valor] * tamanho for _ in range(tamanho)]
 
 
 def gerar_bombas(campo_com_bombas, numero_bombas):
@@ -21,65 +21,82 @@ def gerar_bombas(campo_com_bombas, numero_bombas):
 
 
 def printar_campo(campo):
-    linhas = len(campo)
-    colunas = len(campo[0])
+    tamanho = len(campo)
 
-    for i in range(linhas):
-        for j in range(colunas):
+    for i in range(tamanho):
+        for j in range(tamanho):
             print(campo[i][j], end=" | ")
         print(i + 1)
 
 
 def printar_campo_bombas(campo_com_bombas):
-    linhas = len(campo_com_bombas)
-    colunas = len(campo_com_bombas[0])
+    tamanho = len(campo_com_bombas)
 
-    for i in range(linhas):
-        for j in range(colunas):
+    for i in range(tamanho):
+        for j in range(tamanho):
             print(campo_com_bombas[i][j], end=" | ")
         print(i + 1)
 
 
-def verificar_posicao_valida(linhas, colunas, linha, coluna):
-    return linha >= 1 and linha <= linhas and coluna >= 1 and coluna <= colunas
+def verificar_posicao_valida(tamanho, linha, coluna):
+    return linha >= 0 and linha < tamanho and coluna >= 0 and coluna < tamanho
 
 
-def verificar_jogada_valida(campo, linha, coluna):
-    return campo[linha - 1][coluna - 1] != "x"
+def verificar_jogada_valida(campo, linha, coluna, jogada):
+    if jogada == "abrir":
+        return campo[linha][coluna] != "x" and campo[linha][coluna] == " "
+    else:
+        if jogada == "marcar":
+            return campo[linha][coluna] != "x"
+        else:
+            if jogada == "desmarcar":
+                return campo[linha][coluna] == "x"
+
+    return False
 
 
-def verificar_bomba_presenca(campo_com_bombas, campo_minado, linha_jogada, coluna_jogada):
-    if campo_com_bombas[linha_jogada - 1][coluna_jogada - 1] == "*":
-        return False
-    elif campo_minado[linha_jogada - 1][coluna_jogada - 1] == "x":
-        return False
+def verificar_bomba_presenca(campo_com_bombas, linha_jogada, coluna_jogada, jogada):
+    if jogada != "marcar":
+        if campo_com_bombas[linha_jogada][coluna_jogada] == "*":
+            return False
 
     return True
 
 
-def input_jogador(campo_minado, campo_com_bombas, linha, coluna):
-    linhas = len(campo_minado)
-    colunas = len(campo_minado[0])
-    bombas_ao_redor = 0
+def contar_minas_ao_redor(campo_com_bombas, linha, coluna):
+    count = 0
+    direcoes = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
-    for i in range(linha - 2, linha + 1):
-        for j in range(coluna - 2, coluna + 1):
-            if i >= 0 and i < linhas and j >= 0 and j < colunas:
-                if campo_com_bombas[i][j] == "*":
-                    bombas_ao_redor += 1
+    for direcao in direcoes:
+        nova_linha = linha + direcao[0]
+        nova_coluna = coluna + direcao[1]
 
-    campo_minado[linha - 1][coluna - 1] = str(bombas_ao_redor)
+        if verificar_posicao_valida(len(campo_com_bombas), nova_linha, nova_coluna) and campo_com_bombas[nova_linha][nova_coluna] == "*":
+            count += 1
 
+    return count
+
+
+def input_jogador(campo_minado, campo_com_bombas, linha, coluna, jogada):
+
+    if jogada == "abrir":
+        minas_ao_redor = contar_minas_ao_redor(campo_com_bombas, linha, coluna)
+        campo_minado[linha][coluna] = str(minas_ao_redor)
+    else:
+        if jogada == "marcar":
+            campo_minado[linha][coluna] = "x"
+        else:
+            if jogada == "desmarcar":
+                campo_minado[linha][coluna] = " "
     return campo_minado
 
 
 def jogar_campo_minado():
-    linhas = int(input("Selecione o número de linhas: "))
-    colunas = int(input("Selecione o número de colunas: "))
-    numero_bombas = int(input("Selecione o número de bombas: "))
+    tamanho_tabuleiro = int(input("Selecione o tamanho do tabuleiro: "))
+    numero_bombas = int(input("Selecione o número de bombas (entre 1 e {}): ".format((tamanho_tabuleiro * tamanho_tabuleiro) // 2)))
 
-    campo = gerar_matriz(linhas, colunas, " ")
-    campo_bombas = gerar_matriz(linhas, colunas, " ")
+    campo = gerar_matriz(tamanho_tabuleiro, " ")
+    campo_bombas = gerar_matriz(tamanho_tabuleiro, " ")
 
     flag_terminar = True
     vitoria = False
@@ -90,27 +107,30 @@ def jogar_campo_minado():
     campo_bombas = gerar_bombas(campo_bombas, numero_bombas)
 
     while flag_terminar and not vitoria:
-        input_linha = int(input("Selecione a linha que deseja jogar: "))
-        input_coluna = int(input("Selecione a coluna que deseja jogar: "))
+        input_linha = int(input("Selecione a linha que deseja jogar (de 1 a {}): ".format(tamanho_tabuleiro))) - 1
+        input_coluna = int(input("Selecione a coluna que deseja jogar (de 1 a {}): ".format(tamanho_tabuleiro))) - 1
+        jogada = input("Digite 'abrir' para abrir a célula, 'marcar' para marcar uma mina, ou 'desmarcar' para desmarcar uma mina: ")
 
-        while not verificar_posicao_valida(linhas, colunas, input_linha, input_coluna):
-            print("Posição inválida. Selecione uma posição dentro da matriz.")
-            input_linha = int(input("Selecione a linha que deseja jogar: "))
-            input_coluna = int(input("Selecione a coluna que deseja jogar: "))
+        while not verificar_posicao_valida(tamanho_tabuleiro, input_linha, input_coluna):
+            print("Posição inválida. Selecione uma posição dentro do tabuleiro.")
+            input_linha = int(input("Selecione a linha que deseja jogar (de 1 a {}): ".format(tamanho_tabuleiro))) - 1
+            input_coluna = int(input("Selecione a coluna que deseja jogar (de 1 a {}): ".format(tamanho_tabuleiro))) - 1
 
-        while not verificar_jogada_valida(campo, input_linha, input_coluna):
-            print("Você já jogou nessa posição.")
-            input_linha = int(input("Selecione a linha que deseja jogar: "))
-            input_coluna = int(input("Selecione a coluna que deseja jogar: "))
+        while not verificar_jogada_valida(campo, input_linha, input_coluna, jogada):
+            print("Jogada inválida. Selecione uma posição válida para jogar.")
+            input_linha = int(input("Selecione a linha que deseja jogar (de 1 a {}): ".format(tamanho_tabuleiro))) - 1
+            input_coluna = int(input("Selecione a coluna que deseja jogar (de 1 a {}): ".format(tamanho_tabuleiro))) - 1
 
-        flag_terminar = verificar_bomba_presenca(campo_bombas, campo, input_linha, input_coluna)
+        flag_terminar = verificar_bomba_presenca(campo_bombas, input_linha, input_coluna, jogada)
 
         if flag_terminar:
-            jogadas_certas += 1
-            campo = input_jogador(campo, campo_bombas, input_linha, input_coluna)
+            if jogada != "marcar":
+                jogadas_certas += 1
+
+            campo = input_jogador(campo, campo_bombas, input_linha, input_coluna, jogada)
             printar_campo(campo)
 
-            if jogadas_certas == linhas * colunas - numero_bombas:
+            if jogadas_certas == tamanho_tabuleiro * tamanho_tabuleiro - numero_bombas:
                 vitoria = True
                 print("Você ganhou!")
 
